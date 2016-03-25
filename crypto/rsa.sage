@@ -11,7 +11,7 @@ def factor_rsa_modulus_n(N, e, d):
     and d.
 
     Source: https://crypto.stanford.edu/~dabo/papers/RSA-survey.pdf
-    Reference: BCTF 2016 crypto 500 Hyper RSA
+    CTF: BCTF 2016 crypto 500 Hyper RSA
     """
     k = d * e - 1
     while True:
@@ -34,7 +34,7 @@ def factor_fermat(N):
     i.e., if the gap between p and q is below the square root of p
 
     Source: http://facthacks.cr.yp.to/fermat.html
-    Reference: BKP CTF 2016 Bob's Hat
+    CTF: BKP CTF 2016 Bob's Hat
     """
     if N <= 0: return [N]
     if is_even(N): return [2,N/2]
@@ -43,3 +43,22 @@ def factor_fermat(N):
         a = a + 1
     b = sqrt(a^2-N)
     return [a - b,a + b]
+
+def factor_lattice(N, nearp, howclose, t, k):
+    """Finds p very quickly if p has about half as many bits as N and half of
+    the leading bits of p are known.
+
+    Source: http://facthacks.cr.yp.to/lattice.html
+    """
+    R.<x> = PolynomialRing(ZZ)
+    f = howclose * x + nearp
+    M = matrix(t)
+    for i in range(t):
+        M[i] = (f ^ i * N ^ max(k - i, 0)).coefficients(sparse=False) + [0] * (t - 1 - i)
+    M = M.LLL()
+    Q = sum(z * (x / howclose) ^ i for i, z in enumerate(M[0]))
+    for r, multiplicty in Q.roots():
+        if nearp + r > 0:
+            g = gcd(N, nearp + r)
+            if g > 1: return [g, N / g]
+    return [1, N]

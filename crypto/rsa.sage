@@ -62,3 +62,33 @@ def factor_lattice(N, nearp, howclose, t, k):
             g = gcd(N, nearp + r)
             if g > 1: return [g, N / g]
     return [1, N]
+
+def factor_rsa_wiener(N, e):
+    """Wiener's attack: Factorize the RSA modulus N given the public exponents
+    e when d is small.
+
+    Source: https://crypto.stanford.edu/~dabo/papers/RSA-survey.pdf
+    CTF: BKP CTF 2016 Bob's Hat
+    """
+    N = Integer(N)
+    e = Integer(e)
+    cf = (e / N).continued_fraction().convergents()
+    for f in cf:
+        k = f.numer()
+        d = f.denom()
+        if k == 0:
+            continue
+        phi_N = ((e * d) - 1) / k
+        b = -(N - phi_N + 1)
+        dis = b ^ 2 - 4 * N
+        if dis.sign() == 1:
+            dis_sqrt = sqrt(dis)
+            p = (-b + dis_sqrt) / 2
+            q = (-b - dis_sqrt) / 2
+            if p.is_integer() and q.is_integer() and (p * q) % N == 0:
+                p = p % N
+                q = q % N
+                if p > q:
+                    return (p, q)
+                else:
+                    return (q, p)

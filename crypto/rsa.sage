@@ -6,6 +6,11 @@
 # ecm.factor - The best algorithm for factoring numbers of the form \(n=pm\),
 #              where \(p\) is not “too big”.
 
+def rsa_make_d(p, q, e):
+    """Computes private exponent d given p, q and e.
+    """
+    return inverse_mod(e, (p - 1) * (q - 1))
+
 def factor_rsa_modulus_n(N, e, d):
     """Factorize the RSA modulus N given the public and private exponents, e
     and d.

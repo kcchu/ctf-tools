@@ -23,12 +23,12 @@ def factor_rsa_modulus_n(N, e, d):
         g = randint(2, N-1)
         t = k
         while t % 2 == 0:
-            t = Integer(t / 2)
+            t = t // 2
             x = power_mod(g, t, N)
             y = gcd(x - 1, N)
             if x > 1 and y > 1:
                 p = y
-                q = Integer(N / y)
+                q = N // y
                 if p > q:
                     return (p, q)
                 else:
@@ -97,3 +97,73 @@ def factor_rsa_wiener(N, e):
                     return (p, q)
                 else:
                     return (q, p)
+
+def modular_sqrt(a, p):
+    """Returns modular square root of an integer number a modulo a prime number
+    p.
+
+    Source: http://www.mersennewiki.org/index.php/Modular_Square_Root
+    """
+
+    if a == 0:
+        return (0, )
+
+    if legendre_symbol(a, p) != 1:
+        raise ValueError("a is not a quadratic residue modulo p")
+
+    if p == 2:
+        return (a % p,)
+
+    if p % 4 == 3:
+        r = power_mod(a, (p + 1) // 4, p)
+        return (r, p - r)
+
+    if p % 8 == 5:
+        v = power_mod(2 * a, (p - 5) // 8, p)
+        i = (2 * a * power_mod(v, 2, p)) % p
+        r = a * v * (i - 1) % p
+        return (r, p - r)
+
+    if p % 8 == 1: # Shanks' method
+        q = p - 1
+        e = 0
+        while q % 2 == 0:
+            q //= 2
+            e += 1
+        while True:
+            x = Integer(randint(2, p - 1))
+            z = power_mod(x, q, p)
+            if power_mod(z ^ 2, e - 1, p) != 1:
+                break
+        y = z
+        r = e
+        x = power_mod(a, (q - 1) // 2, p)
+        v = (a * x) % p
+        w = (v * x) % p
+        while w != 1:
+            k = 1
+            ws = power_mod(w, 2, p)
+            while power_mod(ws, k, p) != 1:
+                k += 1
+            d = power_mod(y ^ 2, r - k - 1, p)
+            y = power_mod(d, 2, p)
+            r = k
+            v = (d * v) % p
+            w = (w * y) % p
+        return (v, p - v)
+
+    raise ValueError("Cannot find modular square root")
+
+def modular_sqrt_rabin(a, p, q):
+    """Returns modular square root of an integer number a modulo the product of
+    two primes p and q. (i.e. decryption of Rabin)
+
+    CTF: HITCON 2015 Quals crypto 314 Rsabin
+    """
+    rp = modular_sqrt(a, p)
+    rq = modular_sqrt(a, q)
+    r = []
+    for a in rp:
+        for b in rq:
+            r.append(crt(a, b, p, q))
+    return r
